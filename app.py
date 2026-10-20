@@ -90,13 +90,31 @@ except Exception as exc:
     st.exception(exc)
     st.stop()
 
-portfolio["Mese"] = portfolio["Data"].dt.to_period("M")
-benchmark["Mese"] = benchmark["Data"].dt.to_period("M")
+portfolio["Mese"] = pd.to_datetime(
+    portfolio["Data"],
+    dayfirst=True,
+    errors="coerce"
+).dt.strftime("%Y-%m")
+
+benchmark["Mese"] = pd.to_datetime(
+    benchmark["Data"],
+    dayfirst=True,
+    errors="coerce"
+).dt.strftime("%Y-%m")
 comparison = portfolio.merge(benchmark, on="Mese", suffixes=("_Portafoglio", "_Benchmark"), how="inner")
 comparison["Differenza_pp"] = comparison["Portafoglio_YTD"] - comparison["Benchmark_YTD"]
 comparison["Differenza_bp"] = comparison["Differenza_pp"] * 10000
 comparison["Esito"] = np.where(comparison["Differenza_pp"] >= 0, "Sovraperformance", "Sottoperformance")
 comparison["Periodo"] = comparison["Mese"].astype(str)
+
+st.write("Portfolio righe:", len(portfolio))
+st.write("Benchmark righe:", len(benchmark))
+
+st.write("Date portafoglio")
+st.dataframe(portfolio[["Data","Mese"]])
+
+st.write("Date benchmark")
+st.dataframe(benchmark[["Data","Mese"]])
 
 if comparison.empty:
     st.error("Nessun mese comune tra portafoglio e benchmark.")
